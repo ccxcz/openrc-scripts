@@ -1,0 +1,31 @@
+# vim: ft=gentoo-init-d
+# override file to provide integration with runit process supervisor
+
+export SVDIR="${SVDIR:-/var/service}"
+service_dir="${SVDIR}/${SVCNAME}"
+
+start() {
+	check_config || return 1
+	prepare || return 1
+	[ -f "${service_dir}/down" ] && rm "${service_dir}/down"
+	ebegin "Enabling runit supervision for ${SVCNAME}"
+	sv start "$service_dir"
+	eend $?
+}
+
+stop() {
+	if [ "${RC_CMD}" = "restart" ] ; then
+		checkconfig || return 1
+	fi
+	[ -e "${service_dir}/down" ] || touch "${service_dir}/down"
+	ebegin "Stopping runit supervision for ${SVCNAME}"
+	sv stop "$service_dir"
+	eend $?
+}
+
+reload() {
+	checkconfig || return 1
+	ebegin "Reloading ${SVCNAME}"
+	sv hup "$service_dir"
+}
+
